@@ -11,5 +11,5 @@ package com.nicolaswinsten
  */
 package object wiki {
 
-  def unless(condition: => Boolean)(body: => Unit): Unit = if (!condition) body
+  // def unless(condition: => Boolean)(body: => Unit): Unit = if (!condition) body
 }

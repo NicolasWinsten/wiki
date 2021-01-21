@@ -5,6 +5,7 @@ import java.util.Date
 import Scraper._
 import Page._
 import Title._
+import com.nicolaswinsten.util._
 
 sealed abstract class Page(t: Title) {
   protected val doc: Document = fetchDoc(t) match {
