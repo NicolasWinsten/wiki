@@ -2,11 +2,22 @@ package com.nicolaswinsten.wiki
 
 import Namespaces.Namespace
 
-final case class Title(title: String, ns: Namespace) {
-  def name = s"$ns${ if (ns != Namespaces.Main) ":" else "" }$title"
+/**
+ * Title objects represent Wikipedia titles.
+ *
+ * @example `Title("Literature", Namespaces.Portal)` produces the title Portal:Literature
+ *
+ * @param simpleTitle the simple name for a title not including namespace
+ * @param ns namespace of the title
+ */
+final case class Title(simpleTitle: String, ns: Namespace) {
+  /**
+   * @return full specified name for this Title
+   */
+  def name = s"$ns${ if (ns != Namespaces.Main) ":" else "" }$simpleTitle"
   override def toString: String = name
-  def getPage: Page = Page(this)
 }
+
 
 object Namespaces extends Enumeration {
   type Namespace = Value
@@ -44,15 +55,22 @@ object Namespaces extends Enumeration {
  * Titles are the names of Wikipedia entries. Titles include a name and its namespace.
  */
 object Title {
+  /**
+   * Return the Title with the given full name
+   * @param fullTitle full title including namespace
+   */
   def apply(fullTitle: String): Title = {
     val ns = extractNamespace(fullTitle)
-    new Title(fullTitle stripPrefix s"$ns:", ns)
+    Title(fullTitle stripPrefix s"$ns:", ns)
   }
 
-  def apply(simpleTitle: String, ns: Namespace) = new Title(simpleTitle, ns)
-
+  /**
+   * Return a Title given a simple name and namespace ID
+   * @param simpleTitle title without namespace
+   * @param ns integer id for namespace
+   */
   def apply(simpleTitle: String, ns: Int): Title =
-    try new Title(simpleTitle, Namespaces(ns))
+    try Title(simpleTitle, Namespaces(ns))
     catch {
       case _: NoSuchElementException => throw new NoSuchElementException(
         s"$ns is not a valid id for a Wikipedia namespace. Valid ids can be found here: " +
@@ -68,5 +86,5 @@ object Title {
     }
   }
 
-  implicit def stringToTitle(name: String): Title = Title(name replaceAll (" ", "_"))
+  implicit def string2Title(name: String): Title = Title(name replaceAll (" ", "_"))
 }

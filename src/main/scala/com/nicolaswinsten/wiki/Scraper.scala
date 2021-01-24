@@ -20,24 +20,24 @@ private[wiki] object Scraper {
   type Document = browser.DocumentType
   private val url = "https://en.wikipedia.org"
 
-  private def fetchDoc(url: String): Document = browser parseInputStream new URL(url).openStream()
-
-  def fetchDoc(title: Title): Option[Document] =
-    try Some(fetchDoc(s"$url/wiki/$title"))
-    catch {
-      case _: HttpStatusException => None
-    }
-
-  def extractTitle(doc: Document): Title = Title(doc.title stripSuffix " - Wikipedia")
+  // fetch the Document from an arbitrary URL
+  private def fetchDocByUrl(url: String): Document = browser parseInputStream new URL(url).openStream()
 
   /**
-   * Fetches the true title for the given redirect title
-   * @param title redirect title
+   * Fetch the Wikipedia page Document for a given title
+   * @param title Wikipedia title
    */
-  def resolveRedirect(title: Title): Title = fetchDoc(title) match {
-    case Some(doc) => extractTitle(doc)
-    case None => throw new IllegalArgumentException(s"$title is not a valid title")
-  }
+  def fetchDoc(title: Title): Document =
+    try fetchDocByUrl(s"$url/wiki/$title")
+    catch {
+      case _: HttpStatusException => throw new IllegalArgumentException(s"$title did not produce a Wikipedia page")
+    }
+
+  /**
+   * Extract the title of the given Wikipedia document
+   * @param doc Wikipedia page
+   */
+  def extractTitle(doc: Document): Title = Title(doc.title stripSuffix " - Wikipedia")
 
   /**
    * Returns group <var>i</var> in matches of <var>pattern</var> in <var>doc</var>
@@ -58,7 +58,7 @@ private[wiki] object Scraper {
    */
   def extractCategories(doc: Document): List[String] =
     doc >?> element("#mw-normal-catlinks") match {
-      case Some(x) => x >> elementList("li > a") >> attr("title")
+      case Some(x) => x >> elementList("li > a") >> attr("href") map (_ stripPrefix "/wiki/" )
       case None => Nil
     }
 
@@ -68,7 +68,7 @@ private[wiki] object Scraper {
    */
   def extractHiddenCategories(doc: Document): List[String] =
     doc >?> element("#mw-hidden-catlinks") match {
-      case Some(x) => x >> elementList("li > a") >> attr("title")
+      case Some(x) => x >> elementList("li > a") >> attr("href") map (_ stripPrefix "/wiki/" )
       case None => Nil
     }
 
@@ -78,7 +78,7 @@ private[wiki] object Scraper {
    */
   def extractSubcategories(doc: Document): List[String] =
     doc >?> element("#mw-subcategories") match {
-      case Some(x) => x >> elementList("div.CategoryTreeItem > a") >> attr("title")
+      case Some(x) => x >> elementList("div.CategoryTreeItem > a") >> attr("href") map (_ stripPrefix "/wiki/" )
       case None => Nil
     }
 
@@ -87,7 +87,7 @@ private[wiki] object Scraper {
   @tailrec
   private def _extractCategoryMembers(doc: Document, limit: Int, soFar: ListBuffer[String]): List[String] = {
     val members = doc >?> element("#mw-pages .mw-content-ltr") match {
-      case Some(x) => x >> elementList("a") >> attr("title")
+      case Some(x) => x >> elementList("a") >> attr("href") map (_ stripPrefix "/wiki/" )
       case None => Nil
     }
 
@@ -98,7 +98,7 @@ private[wiki] object Scraper {
     val link = ((doc >> elementList("#mw-pages > a")) find (a => a.text == "next page")) >?> attr("href")
 
     if (limit <= 1 || link.isEmpty) soFar.toList
-    else _extractCategoryMembers(fetchDoc(url + link.get.get), limit - 1, soFar)
+    else _extractCategoryMembers(fetchDocByUrl(url + link.get.get), limit - 1, soFar)
   }
 
   /**

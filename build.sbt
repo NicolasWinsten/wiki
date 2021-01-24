@@ -1,5 +1,5 @@
 ThisBuild / organization := "com.nicolaswinsten"
-ThisBuild / version := "0.2"
+ThisBuild / version := "0.3"
 ThisBuild / scalaVersion := "2.13.4"
 
 name := "wiki"
