@@ -3,9 +3,8 @@ package com.nicolaswinsten.wiki
 import java.util.Date
 
 import Scraper._
-import Page._
 import Title._
-import com.nicolaswinsten.wiki.Namespaces.Namespace
+import Namespaces.Namespace
 
 sealed abstract class Page (protected val doc: Document) {
   /**
@@ -46,8 +45,6 @@ sealed abstract class Page (protected val doc: Document) {
   lazy val hiddenCategories: List[Title] = extractHiddenCategories(doc) map string2Title
 
   lazy val lastEditDate: Date = extractEditDate(doc)
-
-  def refreshed: Page = instantiatePage(title) // TODO is this needed?
 }
 
 object Page {
@@ -98,15 +95,5 @@ case class Category (override val doc: Document) extends Page(doc) {
    * @param fetchLimit maximum number of fetch requests allowed for the query
    */
   def getMembers(fetchLimit: Int): List[String] = extractCategoryMembers(doc, fetchLimit)
-}
-
-object Test extends App {
-  var start = System.nanoTime()
-  for (x <- 1 until 10) println(Article(x.toString))
-  println((System.nanoTime() - start) / Math.pow(10,9))
-
-  start = System.nanoTime()
-  for (x <- 1 until 10) println(randomArticle)
-  println((System.nanoTime() - start) / Math.pow(10,9))
 }
 
